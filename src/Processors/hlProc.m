@@ -101,6 +101,10 @@ classdef hlProc < Processor
             
             % Compute HL:
             
+            %init SPL calculations
+            frame_l_SPL = zeros(1,nChannels);
+            frame_r_SPL = zeros(1,nChannels);
+            
             % Pre-allocate outputs
             out_l = zeros(nSamples,nChannels);
             out_r = zeros(nSamples,nChannels);
@@ -131,11 +135,16 @@ classdef hlProc < Processor
                 n_end = (ii-1)*pObj.hSize+pObj.wSize;
                 
                 % Energy in the windowed frame for left and right input
-                frame_l = mean(power(winRep.*in_l(n_start:n_end,:),2));
-                frame_r = mean(power(winRep.*in_r(n_start:n_end,:),2));
+                frame_l_rms = sqrt(mean(power(winRep.*in_l(n_start:n_end,:),2)));
+                frame_r_rms = sqrt(mean(power(winRep.*in_r(n_start:n_end,:),2)));
                 
-                frame_l_SPL = 20*log10(sqrt(frame_l)/xref); %acc. SPL left channel
-                frame_r_SPL = 20*log10(sqrt(frame_r)/xref); %acc. SPL right channel
+                %update SPL and devide by number of frames for averaging
+                %between two successive frames
+                frame_l_SPL = 20*log10(0.5*(frame_l_rms/xref + 10.^(frame_l_SPL/20))); %acc. SPL left channel
+                frame_r_SPL = 20*log10(0.5*(frame_r_rms/xref + 10.^(frame_r_SPL/20))); %acc. SPL right channel
+                
+            end
+
                 max_lr_SPL = max(frame_l_SPL,frame_r_SPL); %select maximum values from left and right channel
                 bpassth = max_lr_SPL>ath; %bool: all filters that are above absolute threshold of hearing
                 
@@ -143,17 +152,15 @@ classdef hlProc < Processor
                 actbands = actbands(bpassth); %select activated channels from the vector
                 
                 % Set all frames to 0 that are below the specified threshold
-                out_l(n_start:n_end,actbands) = in_l(n_start:n_end,actbands);
-                out_r(n_start:n_end,actbands) = in_r(n_start:n_end,actbands);
+                out_l(:,actbands) = in_l(:,actbands);
+                out_r(:,actbands) = in_r(:,actbands);
                 
-                totSPL_l = 10*log10(sum(10.^(0.1*frame_l_SPL))); %tot. level from all filters left channel
-                totSPL_r = 10*log10(sum(10.^(0.1*frame_r_SPL))); %tot. level from all filters right channel
+                %frame_SPL contains total SPL after frame-based processing
                 %(check if it corresponds to the specified level)
-                
-            end
+                totSPL = 10*log10(sum(10.^(max_lr_SPL/10))); %tot. level from all filters left channel
             
-%             % Update the buffer: the input that was not extracted as a
-%             % frame should be stored
+            % Update the buffer: the input that was not extracted as a
+            % frame should be stored
             pObj.buffer_l = in_l(nFrames*pObj.hSize+1:end,:);
             pObj.buffer_r = in_r(nFrames*pObj.hSize+1:end,:);
             

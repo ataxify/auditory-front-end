@@ -33,11 +33,8 @@ function asw = calcASW(dObj,varargin)
 if nargin<1||isempty(dObj)
     error('Please provide an data object!')
 end
-if isempty(findprop(dObj,'itd'))
-    error('Please provide an object containing property ''itd''!')
-end
-if isempty(findprop(dObj,'ild'))
-    error('Please provide an object containing property ''ild''!')
+if isempty(findprop(dObj,'itd'))||isempty(findprop(dObj,'ild'))
+    error('Please provide an object containing property ''itd'' and ''ild''!')
 end
 
 %optional parameters

@@ -114,50 +114,58 @@ classdef hlProc < Processor
             
             % Get threshold
             switch pObj.Method
+                case 'none'
+                    actbands = (1:length(pObj.cfHz)); %column-vector with #filters
+                    
                 case 'ath'
                     ath = calcATH(pObj.cfHz*1e-3); %absolute threshold of hearing
                     xref = 20e-5; %ref for dB SPL definition: xrms = 1 -> Lp = 74dB SPL
-                %(xrms = xref = 20e-5 -> Lp = 0dB SPL)
-                % xref = 1e-5; %ref for digital value definition: xrms = 1 -> Lp = 100dB
-                %              %using this reference will reproduce totEnergy = Lp
-                %              (Lp being the specified level of the input signal)
+                    %(xrms = xref = 20e-5 -> Lp = 0dB SPL)
+                    % xref = 1e-5; %ref for digital value definition: xrms = 1 -> Lp = 100dB
+                    %              %using this reference will reproduce totEnergy = Lp
+                    %              (Lp being the specified level of the input signal)
+                    
+                    % Loop on the time frame
+                    for ii = 1:nFrames
+                        % Get start and end indexes for the current frame
+                        n_start = (ii-1)*pObj.hSize+1;
+                        n_end = (ii-1)*pObj.hSize+pObj.wSize;
+                        
+                        % Energy in the windowed frame for left and right input
+                        frame_l_rms = sqrt(mean(power(winRep.*in_l(n_start:n_end,:),2)));
+                        frame_r_rms = sqrt(mean(power(winRep.*in_r(n_start:n_end,:),2)));
+                        
+                        %update SPL and devide by number of frames for averaging
+                        %between two successive frames
+                        frame_l_SPL = 20*log10(0.5*(frame_l_rms/xref + 10.^(frame_l_SPL/20))); %acc. SPL left channel
+                        frame_r_SPL = 20*log10(0.5*(frame_r_rms/xref + 10.^(frame_r_SPL/20))); %acc. SPL right channel
+                        
+                    end
+                    
+                    %select maximum values from left and right channel
+                    max_lr_SPL = max(frame_l_SPL,frame_r_SPL);
+                    
+                    %all filters that are above absolute threshold of hearing
+                    bpassth = max_lr_SPL>ath; %bool 
+                    
+                    %active bands
+                    actbands = (1:length(pObj.cfHz)); %column-vector with #filters
+                    actbands = actbands(bpassth); %select activated channels from the vector
                     
                 case 'en'
+                    warning('Energy-based method not implemented yet!')
                     
                 otherwise
                     error(['The method ' pObj.Method ' is not defined!'])
             end
             
-            % Loop on the time frame
-            for ii = 1:nFrames
-                % Get start and end indexes for the current frame
-                n_start = (ii-1)*pObj.hSize+1;
-                n_end = (ii-1)*pObj.hSize+pObj.wSize;
-                
-                % Energy in the windowed frame for left and right input
-                frame_l_rms = sqrt(mean(power(winRep.*in_l(n_start:n_end,:),2)));
-                frame_r_rms = sqrt(mean(power(winRep.*in_r(n_start:n_end,:),2)));
-                
-                %update SPL and devide by number of frames for averaging
-                %between two successive frames
-                frame_l_SPL = 20*log10(0.5*(frame_l_rms/xref + 10.^(frame_l_SPL/20))); %acc. SPL left channel
-                frame_r_SPL = 20*log10(0.5*(frame_r_rms/xref + 10.^(frame_r_SPL/20))); %acc. SPL right channel
-                
-            end
-
-                max_lr_SPL = max(frame_l_SPL,frame_r_SPL); %select maximum values from left and right channel
-                bpassth = max_lr_SPL>ath; %bool: all filters that are above absolute threshold of hearing
-                
-                actbands = (1:length(pObj.cfHz)); %column-vector with #filters
-                actbands = actbands(bpassth); %select activated channels from the vector
-                
-                % Set all frames to 0 that are below the specified threshold
-                out_l(:,actbands) = in_l(:,actbands);
-                out_r(:,actbands) = in_r(:,actbands);
-                
-                %frame_SPL contains total SPL after frame-based processing
-                %(check if it corresponds to the specified level)
-                totSPL = 10*log10(sum(10.^(max_lr_SPL/10))); %tot. level from all filters left channel
+            % Set all frames to 0 that are below the specified threshold
+            out_l(:,actbands) = in_l(:,actbands);
+            out_r(:,actbands) = in_r(:,actbands);
+            
+            %frame_SPL contains total SPL after frame-based processing
+            %(check if it corresponds to the specified level)
+            totSPL = 10*log10(sum(10.^(max_lr_SPL/10))); %tot. level from all filters left channel
             
             % Update the buffer: the input that was not extracted as a
             % frame should be stored

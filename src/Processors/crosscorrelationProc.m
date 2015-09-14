@@ -240,7 +240,7 @@ classdef crosscorrelationProc < Processor
     methods (Static)
         
         function dep = getDependency()
-            dep = 'innerhaircell';
+            dep = 'hl';
         end
         
         function [names, defaultValues, descriptions] = getParameterInfo()

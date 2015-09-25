@@ -242,7 +242,7 @@ classdef BinHistogramSignal < Signal
                 %gravityFct
                 if p.bgravity
                     %sum distributions of all frequency channels and normalise to all active channels
-                    gravityFctAvFirst = sum(Nhist,2)/Nchanact;
+                    gravityFctAvFirst = nansum(Nhist,2)/Nchanact;
                     
                     %plot
                     subplot(1,2,2)

@@ -102,7 +102,7 @@ if ymax < binCueMax
 end
     
 %init 
-Nhist = zeros(nbins,Nchan);
+Nhist = NaN(nbins,Nchan);
 
 %consider only activated bands
 Nchanact = size(actbands,2); %number of activated channels, used to normalise gravity plot

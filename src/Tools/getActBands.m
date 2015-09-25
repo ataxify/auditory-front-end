@@ -34,7 +34,7 @@ Nchan = size(timeFreq,2);
 actbandsInit = 1:Nchan;
 
 %find non-zero channels
-bpassTh = sum(timeFreq~=0,1)>0;
+bpassTh = sum(~isnan(timeFreq),1)>0;
 
 %active bands 'actbands'
 actbands = actbandsInit(bpassTh);

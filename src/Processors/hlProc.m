@@ -106,8 +106,8 @@ classdef hlProc < Processor
             frame_r_SPL = zeros(1,nChannels);
             
             % Pre-allocate outputs
-            out_l = zeros(nSamples,nChannels);
-            out_r = zeros(nSamples,nChannels);
+            out_l = NaN(nSamples,nChannels);
+            out_r = NaN(nSamples,nChannels);
             
             % Window processing
             winRep = repmat(pObj.win,1,nChannels);
@@ -341,6 +341,7 @@ classdef hlProc < Processor
             pInfo.requestLabel = 'Hearing Level';
             pInfo.outputType = 'TimeFrequencySignal';
             pInfo.isBinaural = 2;
+            pInfo.hasTwoOutputs = 1;
             
         end
         

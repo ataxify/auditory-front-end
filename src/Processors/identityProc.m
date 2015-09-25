@@ -48,7 +48,7 @@ classdef identityProc < Processor
             pInfo.requestName = 'n-a';
             pInfo.requestLabel = 'n-a';
             pInfo.outputType = 'n-a';
-            
+            pInfo.isBinaural = 0;
         end
         
     end

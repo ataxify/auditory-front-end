@@ -131,6 +131,7 @@ classdef Processor < handle
             % Populate properties
             pInfo = feval([procName '.getProcessorInfo']);
             pObj.Type = pInfo.name;
+            pObj.isBinaural = pInfo.isBinaural;
             pObj.FsHzIn = fsIn;
             pObj.FsHzOut = fsOut;
             
@@ -486,7 +487,10 @@ classdef Processor < handle
                     
                 elseif size(dependency{1}.Output,2) == 2
                     % Case 3: Dependency is a multi-channel processor
-                    if strcmp(pObj.Channel,'left')
+                    if pObj.isBinaural ~= 0 %fix for hlProc
+                        pObj.Input{1} = dependency{1}.Output{1};
+                        pObj.Input{2} = dependency{1}.Output{2};
+                    elseif strcmp(pObj.Channel,'left')
                         pObj.Input{1} = dependency{1}.Output{1};
                     else
                         pObj.Input{1} = dependency{1}.Output{2};

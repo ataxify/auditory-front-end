@@ -111,10 +111,10 @@ end
 %Comination of both cues
 switch combMethod
     case 'itd' %use only itd
-        asw = mean(itdWidthChan,2); %average all channels
+        asw = nanmean(itdWidthChan,2); %average all channels
         
     case 'ild' %use only ild
-        asw = mean(ildWidthChan,2); %average all channels
+        asw = nanmean(ildWidthChan,2); %average all channels
         
     case 'duplex' %combine itd and ild according to duplex theory
         if strcmp(transMethod,'none')
@@ -133,7 +133,7 @@ switch combMethod
         aswWidthChan(:,~bchanitd) = itdWidthChan(:,~bchanitd);
         
         %average all channels
-        asw = mean(aswWidthChan,2);
+        asw = nanmean(aswWidthChan,2);
         
     case 'dominant' %choose the dominant cue in each channel, i.e. the one with higher variance
         if strcmp(transMethod,'none')
@@ -150,7 +150,7 @@ switch combMethod
         aswWidthChan(:,~bitdDominance) = itdWidthChan(:,~bitdDominance);  
         
         %average all channels
-        asw = mean(aswWidthChan,2);
+        asw = nanmean(aswWidthChan,2);
         
     otherwise
         error(['The transformation method ' transMethod ' is not defined!'])

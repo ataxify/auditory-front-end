@@ -85,7 +85,11 @@ classdef itdProc < Processor
                     [c,i] = max(in(ii,jj,:));
                     
                     % Lag of most salient peak
-                    lagInt = lags(i);
+                    if isnan(c) %Channel was omitted by hlProc
+                        lagInt = NaN; 
+                    else 
+                        lagInt = lags(i);
+                    end
                     
                     if i>1 && i<nLags
                         % Then interpolate using neighbor points

@@ -152,6 +152,10 @@ classdef hlProc < Processor
                     actbands = (1:length(pObj.cfHz)); %column-vector with #filters
                     actbands = actbands(bpassth); %select activated channels from the vector
                     
+                    %frame_SPL contains total SPL after frame-based processing
+                    %(check if it corresponds to the specified level)
+                    totSPL = 10*log10(sum(10.^(max_lr_SPL/10))); %tot. level from all filters left channel
+                    
                 case 'en'
                     warning('Energy-based method not implemented yet!')
                     
@@ -162,10 +166,6 @@ classdef hlProc < Processor
             % Set all frames to 0 that are below the specified threshold
             out_l(:,actbands) = in_l(:,actbands);
             out_r(:,actbands) = in_r(:,actbands);
-            
-            %frame_SPL contains total SPL after frame-based processing
-            %(check if it corresponds to the specified level)
-            totSPL = 10*log10(sum(10.^(max_lr_SPL/10))); %tot. level from all filters left channel
             
             % Update the buffer: the input that was not extracted as a
             % frame should be stored
@@ -323,7 +323,7 @@ classdef hlProc < Processor
                     'Window duration (s)',...
                     'Window step size (s)'};
             
-            defaultValues = {'ath',...
+            defaultValues = {'none',...
                             0.5,...
                             'hann',...
                             20E-3,...

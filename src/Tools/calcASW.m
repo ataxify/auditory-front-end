@@ -95,6 +95,19 @@ switch transMethod
         itdWidthChan = latCompression(itdWidthChan,range.itd(2));
         ildWidthChan = latCompression(ildWidthChan,range.ild(2));
         
+    case 'mapping' %mapping binaural cues to azimuthal angle
+        % Map ITDs to azimuth
+        nChannels = size(itd,2);
+        itd_mapped = zeros(size(itd,1),nChannels);
+        maxitd  = max(max(itd));
+        % itd_vector = linspace(-maxitd,maxitd,size(itd,1));
+        load ITD2Azimuth_Subband.mat
+        % load ILD2Azimuth_Subband.mat
+        
+%         for ii = 1:nChannels
+%             itd_mapped(:,ii) = find(itd(ii,:)<=mapping.itd2azim(:,ii))
+%         end
+        
     otherwise
         error(['The transformation method ' transMethod ' is not defined!'])
         
@@ -118,7 +131,7 @@ switch combMethod
         
     case 'duplex' %combine itd and ild according to duplex theory
         if strcmp(transMethod,'none')
-            warning('Bin. cues need to be transformed before they can be comined!')
+            warning('Bin. cues need to be transformed before they can be combined!')
         end
         
         %cross-over frequency in Hz
@@ -137,7 +150,7 @@ switch combMethod
         
     case 'dominant' %choose the dominant cue in each channel, i.e. the one with higher variance
         if strcmp(transMethod,'none')
-            warning('Bin. cues need to be transformed before they can be comined!')
+            warning('Bin. cues need to be transformed before they can be combined!')
         end
         
         bitdDominance = (itdWidthChan>ildWidthChan);
@@ -153,7 +166,7 @@ switch combMethod
         asw = nanmean(aswWidthChan,2);
         
     otherwise
-        error(['The transformation method ' transMethod ' is not defined!'])
+        error(['The combination method ' combMethod ' is not defined!'])
 
 end
 

@@ -29,7 +29,7 @@
 function asw = calcASW(dObj,varargin)
 
 %% Inputs
-%check inputs
+% check inputs
 if nargin<1||isempty(dObj)
     error('Please provide an data object!')
 end
@@ -37,7 +37,7 @@ if isempty(findprop(dObj,'itd'))||isempty(findprop(dObj,'ild'))
     error('Please provide an object containing property ''itd'' and ''ild''!')
 end
 
-%optional parameters
+% optional parameters
 opt = struct(varargin{:});
                              
 if isfield(opt,'wdMethod')
@@ -71,18 +71,18 @@ range.itd = [-1e-3 1e-3];
 range.ild = [-20 20];
 
 %% Processing
-%get itd and ild data
+% get itd and ild data
 itd = dObj.itd{1}.Data(:);
 ild = dObj.ild{1}.Data(:);
 cfHz = dObj.itd{1}.cfHz;
 Nchan = size(dObj.itd{1}.Data(:),2);
 
-%A) calculate width per channel first, then average across channels
-%Width per channel
+% A) calculate width per channel first, then average across channels
+% Width per channel
 itdWidthChan = calcDistrWidth(itd,wdMethod,percent); %calculate width of binCue directly for each frequency channel
 ildWidthChan = calcDistrWidth(ild,wdMethod,percent); %calculate width of binCue directly for each frequency channel
 
-%Transformation of bin. cue
+% Transformation of bin. cue
 switch transMethod
     case 'none' %no transformation
         %do nothing
@@ -113,39 +113,51 @@ switch transMethod
         
 end
 
-%Frequency weighting
+% Frequency weighting
 switch freqWeighting
-    case 'none'
+    case 'none' %no weighting, i.e. use all bands 
+        itdBandSelect = 1:Nchan;
+        ildBandSelect = 1:Nchan;
+        
+    case 'itdlow' %lowpass itds, i.e. use itds only at low freqeuncies
+        itdBandSelect = 1:20; %lowpass filter cut-off [#frequency band]
+        ildBandSelect = 1:Nchan;
+        
+    case 'itdE3' %lowpass itds, i.e. use itds only at low freqeuncies
+        itdBandSelect = 5:25; %#frequency bands that correspond to the averaging 
+                        %performed in IACC_E3, 
+                        %i.e. octave bands around 0.5, 1 and 2 kHz
+        ildBandSelect = 1:Nchan;
         
     otherwise
         error(['The frequency weighting ' freqWeighting ' is not defined!'])
 end
 
-%Comination of both cues
+% Combination of both cues
 switch combMethod
     case 'itd' %use only itd
-        asw = nanmean(itdWidthChan,2); %average all channels
+        asw = nanmean(itdWidthChan(:,itdBandSelect),2); %average all channels
         
     case 'ild' %use only ild
-        asw = nanmean(ildWidthChan,2); %average all channels
+        asw = nanmean(ildWidthChan(:,ildBandSelect),2); %average all channels
         
     case 'duplex' %combine itd and ild according to duplex theory
         if strcmp(transMethod,'none')
             warning('Bin. cues need to be transformed before they can be combined!')
         end
         
-        %cross-over frequency in Hz
+        % cross-over frequency in Hz
         fcrossHz = 1500; 
         
-        %init
+        % init
         aswWidthChan = zeros(size(itdWidthChan));
         
-        %choose channels below fcrossHz from itds and above from ilds
+        % choose channels below fcrossHz from itds and above from ilds
         bchanitd = (cfHz <= fcrossHz);
         aswWidthChan(:,bchanitd) = itdWidthChan(:,bchanitd);
         aswWidthChan(:,~bchanitd) = itdWidthChan(:,~bchanitd);
         
-        %average all channels
+        % average all channels
         asw = nanmean(aswWidthChan,2);
         
     case 'dominant' %choose the dominant cue in each channel, i.e. the one with higher variance
@@ -155,14 +167,14 @@ switch combMethod
         
         bitdDominance = (itdWidthChan>ildWidthChan);
         
-        %init
+        % init
         aswWidthChan = zeros(size(itdWidthChan));
         
-        %choose channels for either dominance
+        % choose channels for either dominance
         aswWidthChan(:,bitdDominance) = itdWidthChan(:,bitdDominance);
         aswWidthChan(:,~bitdDominance) = itdWidthChan(:,~bitdDominance);  
         
-        %average all channels
+        % average all channels
         asw = nanmean(aswWidthChan,2);
         
     otherwise

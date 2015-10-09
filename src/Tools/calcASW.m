@@ -79,8 +79,8 @@ Nchan = size(dObj.itd{1}.Data(:),2);
 
 % A) calculate width per channel first, then average across channels
 % Width per channel
-itdWidthChan = calcDistrWidth(itd,wdMethod,percent); %calculate width of binCue directly for each frequency channel
-ildWidthChan = calcDistrWidth(ild,wdMethod,percent); %calculate width of binCue directly for each frequency channel
+[itdWidthChan, itdLR_boarderChan] = calcDistrWidth(itd,wdMethod,percent); %calculate width of binCue directly for each frequency channel
+[ildWidthChan, ildLR_boarderChan] = calcDistrWidth(ild,wdMethod,percent); %calculate width of binCue directly for each frequency channel
 
 % Transformation of bin. cue
 switch transMethod
@@ -96,21 +96,51 @@ switch transMethod
         ildWidthChan = latCompression(ildWidthChan,range.ild(2));
         
     case 'mapping' %mapping binaural cues to azimuthal angle
-        % Map ITDs to azimuth
-        nChannels = size(itd,2);
-        itd_mapped = zeros(size(itd,1),nChannels);
-        maxitd  = max(max(itd));
-        % itd_vector = linspace(-maxitd,maxitd,size(itd,1));
-        load ITD2Azimuth_Subband.mat
-        % load ILD2Azimuth_Subband.mat
+        warning('This method is not implemented yet!')
         
-%         for ii = 1:nChannels
-%             itd_mapped(:,ii) = find(itd(ii,:)<=mapping.itd2azim(:,ii))
-%         end
+    case 'lrmapping' %Map lr_boarder (percentiles/std) of ITDs to azimuthal angle
+        % init
+        itd_mapped = zeros(2,Nchan);
+        ild_mapped = zeros(2,Nchan);
+        angleoffset = -91; %offset to find the correct angle [degree]
+        itdload = load('ITD2Azimuth_Subband.mat');
+        itd2azim = itdload.mapping.itd2azim;
+        ildload = load('ILD2Azimuth_Subband.mat');
+        ild2azim = ildload.mapping.ild2azim;
         
-    otherwise
-        error(['The transformation method ' transMethod ' is not defined!'])
+        for ii = 1:Nchan
+            % itd mapping
+            if isempty(find(itdLR_boarderChan(1,ii)<=itd2azim(:,ii)))
+                itd_mapped(1,ii) = -90;
+            else
+                itd_mapped(1,ii) = find(itdLR_boarderChan(1,ii)<=itd2azim(:,ii),1) + angleoffset;
+            end
+            if isempty(find(itdLR_boarderChan(2,ii)<=itd2azim(:,ii)))
+                itd_mapped(2,ii) = 90;
+            else
+                itd_mapped(2,ii) = find(itdLR_boarderChan(2,ii)<=itd2azim(:,ii),1) + angleoffset;
+            end
+            
+            % ild mapping
+            if isempty(find(ildLR_boarderChan(1,ii)<=ild2azim(:,ii)))
+                ild_mapped(1,ii) = -90;
+            else
+                ild_mapped(1,ii) = find(ildLR_boarderChan(1,ii)<=ild2azim(:,ii),1) + angleoffset;
+            end
+            if isempty(find(ildLR_boarderChan(2,ii)<=ild2azim(:,ii)))
+                ild_mapped(2,ii) = 90;
+            else
+                ild_mapped(2,ii) = find(ildLR_boarderChan(2,ii)<=ild2azim(:,ii),1) + angleoffset;
+            end
+        end
         
+        % Replace width with left-right boarders
+        itdWidthChan = itd_mapped;
+        ildWidthChan = ild_mapped;
+
+otherwise
+    error(['The transformation method ' transMethod ' is not defined!'])
+    
 end
 
 % Frequency weighting

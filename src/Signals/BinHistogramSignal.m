@@ -253,7 +253,7 @@ classdef BinHistogramSignal < Signal
                     pos2 = get(plottwo,'Position');
                     hpytick = get(plotone,'YTick');
                     set(plotone,'Position',[pos1(1) pos1(2) pos1(3)+shift pos1(4)])
-                    set(plottwo,'Position',[pos2(1)+shift-0.1 pos2(2) gravplwidth pos2(4)])
+                    set(plottwo,'Position',[pos2(1)+shift-0.08 pos2(2) gravplwidth pos2(4)])
                     set(gca,'XTick',hpytick)
                     set(gca,'XTickLabel',[])
                     set(gca,'YTickLabel',{'0';'';num2str(p.gravlim)})

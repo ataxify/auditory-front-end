@@ -22,7 +22,7 @@
 % - added lf_boarder, 09. October 2015, JK
 % --------------------------------------------
 
-function [width, lr_boarder] = calcDistrWidth(distr,wdMethod,percent)
+function [width, lr_boarder, prct] = calcDistrWidth(distr,wdMethod,percent)
 
 %% Check inputs
 if nargin<3||isempty(percent)
@@ -35,6 +35,8 @@ end
 
 %% Implementation
 DIM = 1; %calculation along dimension DIM
+prct = []; %init
+
 switch wdMethod
     case 'prct'
         prct = prctile(distr,percent,DIM); %percentiles

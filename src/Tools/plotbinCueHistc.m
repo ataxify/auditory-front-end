@@ -96,7 +96,7 @@ catch
     %do nothing
 end
 try
-    markers = r.markers;
+    markers = r.markers; %vertical lines to mark a certain frequncy region
 catch
     markers = 0;
 end

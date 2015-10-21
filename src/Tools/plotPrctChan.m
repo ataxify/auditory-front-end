@@ -139,6 +139,9 @@ else
     set(plotone,'XTickLabel',xticklabel(xtick:xtick:end))
     set(gca,'FontSize',PLOT.fszax)
 end
-        
+
+view(90,90)
+set(gca,'ygrid','on','xdir','reverse')
+
 end
 %EOF

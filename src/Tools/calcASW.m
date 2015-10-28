@@ -33,7 +33,11 @@ function [asw, aswReprChan, itdReprChan, ildReprChan] = calcASW(dObj,varargin)
 if nargin<1||isempty(dObj)
     error('Please provide a data object!')
 end
-if isempty(findprop(dObj,'itd'))||isempty(findprop(dObj,'ild'))
+% if isempty(findprop(dObj,'itd'))||isempty(findprop(dObj,'ild'))
+%     error('Please provide an object containing property ''itd'' and ''ild''!')
+% end
+% temporarily use this implementation (due to substituted hlProc.m)
+if ~isfield(dObj,'itd')||~isfield(dObj,'ild')
     error('Please provide an object containing property ''itd'' and ''ild''!')
 end
 
@@ -53,12 +57,12 @@ end
 if isfield(opt,'itdmax')
     itdmax = opt.itdmax;
 else
-    itdmax = [-1e-3 1e-3];
+    itdmax = 1e-3;
 end
 if isfield(opt,'ildmax')
     ildmax = opt.ildmax;
 else
-    ildmax = [-20 20];
+    ildmax = 20;
 end
 if isfield(opt,'chanRepresent')
     chanRepresent = opt.chanRepresent;
@@ -80,15 +84,25 @@ if isfield(opt,'combMethod')
 else
     combMethod = 'itd';
 end
+if isfield(opt,'weights')
+    weights = opt.weights;
+else
+    weights = ones(1,size(dObj.itd,2)); %use ones, so no weighting!
+end
 
 %% Definitions
 
 %% Processing
 % get itd and ild data
-itd = dObj.itd{1}.Data(:);
-ild = dObj.ild{1}.Data(:);
-cfHz = dObj.itd{1}.cfHz;
-Nchan = size(dObj.itd{1}.Data(:),2);
+% itd = dObj.itd{1}.Data(:);
+% ild = dObj.ild{1}.Data(:);
+% cfHz = dObj.itd{1}.cfHz;
+% Nchan = size(dObj.itd{1}.Data(:),2);
+% temporarily use this implementation (due to substituted hlProc.m)
+itd = dObj.itd;
+ild = dObj.ild;
+cfHz = dObj.cfHz;
+Nchan = size(dObj.itd,2);
 
 % Width per channel
 [itdWidthChan, itdLR_boarderChan, itdPrctChan] = calcDistrWidth(itd,wdMethod,percent); %calculate width of binCue directly for each frequency channel
@@ -122,47 +136,31 @@ switch transMethod
         %do nothing
         
     case 'norm' %normalization
-        itdReprChan = itdReprChan/itdmax(2);
-        ildReprChan = ildReprChan/ildmax(2);
+        itdReprChan = itdReprChan/itdmax;
+        ildReprChan = ildReprChan/ildmax;
         
     case 'latcomp' %lateral compression
-        itdReprChan = latCompression(itdReprChan,itdmax(2));
-        ildReprChan = latCompression(ildReprChan,ildmax(2));
+        itdReprChan = latCompression(itdReprChan,itdmax);
+        ildReprChan = latCompression(ildReprChan,ildmax);
         
     case 'mapping' %Map boarders (percentiles/std) of ITDs and ILDs to azimuthal angle
         % init
-        itd_mapped = zeros(2,Nchan);
-        ild_mapped = zeros(2,Nchan);
-        angleoffset = -91; %offset to find the correct angle [degree]
+        Nbounds = size(itdReprChan(:,1),1);
+        itd_mapped = zeros(Nbounds,Nchan);
+        ild_mapped = zeros(Nbounds,Nchan);
+        % angleoffset = -91; %offset to find the correct angle [degree]
         itdload = load('ITD2Azimuth_Subband.mat');
         itd2azim = itdload.mapping.itd2azim;
         ildload = load('ILD2Azimuth_Subband.mat');
         ild2azim = ildload.mapping.ild2azim;
         
         for ii = 1:Nchan %all channels
-            for jj = 1:size(itdReprChan,1) %all percentiles/stds
-                % itd mapping
-                if isempty(find(itdReprChan(jj,ii)<=itd2azim(:,ii))) %exceeds max/min values?
-                    if itdReprChan(jj,ii)<=0
-                        itd_mapped(jj,ii) = -90;
-                    else
-                        itd_mapped(jj,ii) = 90;
-                    end
-                else
-                    itd_mapped(jj,ii) = find(itdReprChan(jj,ii)<=itd2azim(:,ii),1) + angleoffset;
-                end
-                
-                % ild mapping
-                if isempty(find(ildReprChan(jj,ii)<=ild2azim(:,ii))) %exceeds max/min values?
-                    if ildReprChan(jj,ii)<=0
-                        ild_mapped(jj,ii) = -90;
-                    else
-                        ild_mapped(jj,ii) = 90;
-                    end
-                else
-                    ild_mapped(jj,ii) = find(ildReprChan(jj,ii)<=ild2azim(:,ii),1) + angleoffset;
-                end
-            end
+            % itd mapping
+            azimuth = -90:90;
+            itd_mapped(:,ii) = interp1(itd2azim(:,ii),azimuth,itdReprChan(:,ii),'nearest','extrap');
+            
+            % ild mapping
+            ild_mapped(:,ii) = interp1(ild2azim(:,ii),azimuth,ildReprChan(:,ii),'nearest','extrap');
         end
         
         % Overwrite channel representation per cue with results from
@@ -182,7 +180,7 @@ switch freqWeighting
         ildBandSelect = 1:Nchan;
         
     case 'itdlow' %lowpass itds, i.e. use itds only at low freqeuncies
-        itdBandSelect = 1:20; %lowpass filter cut-off [#frequency band]
+        itdBandSelect = 1:19; %lowpass filter cut-off [#frequency band]
         ildBandSelect = 1:Nchan;
         
     case 'itdE3' %lowpass itds, i.e. use itds only at low freqeuncies
@@ -193,6 +191,12 @@ switch freqWeighting
                         %respectively
         ildBandSelect = 1:Nchan;
         
+    case 'spl'
+        itdBandSelect = 1:Nchan;
+        ildBandSelect = 1:Nchan;
+        itdReprChan = itdReprChan.*repmat(weights,size(itdReprChan,1),1);
+        ildReprChan = ildReprChan.*repmat(weights,size(ildReprChan,1),1);
+        
     otherwise
         error(['The frequency weighting ' freqWeighting ' is not defined!'])
 end
@@ -200,11 +204,11 @@ end
 % Combination of both cues
 switch combMethod
     case 'itd' %use only itd
-        aswReprChan = itdReprChan;
+        aswReprChan = itdReprChan(:,itdBandSelect);
         asw = nanmean(itdReprChan(:,itdBandSelect),2); %average all channels
         
     case 'ild' %use only ild
-        aswReprChan = ildReprChan;
+        aswReprChan = ildReprChan(:,ildBandSelect);
         asw = nanmean(ildReprChan(:,ildBandSelect),2); %average all channels
         
     case 'duplex' %combine itd and ild according to duplex theory
@@ -213,15 +217,16 @@ switch combMethod
         end
         
         % cross-over frequency in Hz
-        fcrossHz = 1500; 
+        fcrossHz = 1500;
+        % find corresponding channel
+        fcrossBand = interp1(cfHz,1:Nchan,fcrossHz,'next','extrap');
         
         % init
         aswReprChan = zeros(size(itdReprChan));
         
         % choose channels below fcrossHz from itds and above from ilds
-        bchanitd = (cfHz <= fcrossHz);
-        aswReprChan(:,bchanitd) = itdReprChan(:,bchanitd);
-        aswReprChan(:,~bchanitd) = itdReprChan(:,~bchanitd);
+        aswReprChan(:,1:fcrossBand) = itdReprChan(:,1:fcrossBand);
+        aswReprChan(:,fcrossBand+1:end) = ildReprChan(:,fcrossBand+1:end);
         
         % average all channels
         asw = nanmean(aswReprChan,2);
@@ -238,7 +243,7 @@ switch combMethod
         
         % choose channels for either dominance
         aswReprChan(:,bitdDominance) = itdReprChan(:,bitdDominance);
-        aswReprChan(:,~bitdDominance) = itdReprChan(:,~bitdDominance);  
+        aswReprChan(:,~bitdDominance) = ildReprChan(:,~bitdDominance);  
         
         % average all channels
         asw = nanmean(aswReprChan,2);

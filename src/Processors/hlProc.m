@@ -154,7 +154,7 @@ classdef hlProc < Processor
                     
                     %frame_SPL contains total SPL after frame-based processing
                     %(check if it corresponds to the specified level)
-                    totSPL = 10*log10(sum(10.^(max_lr_SPL/10))); %tot. level from all filters left channel
+                    totSPL = 20*log10(sum(10.^(max_lr_SPL/20))); %tot. level from all filters
                     
                 case 'en'
                     warning('Energy-based method not implemented yet!')

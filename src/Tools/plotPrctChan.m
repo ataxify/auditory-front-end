@@ -49,6 +49,11 @@ catch
     legendtag = {'10 %','30 %','50 %','70 %','90 %'}; %lengend tags
 end
 try
+    blegend = r.blegend;
+catch
+    blegend = 1; %bool: plot lengend
+end
+try
     xticklabel = r.xticklabel; %use for cfHz
 catch
     %do nothing
@@ -57,6 +62,16 @@ try
     bvertmarkers = r.bvertmarkers; %vertical lines to mark a certain frequncy region
 catch
     bvertmarkers = 0;
+end
+try
+    choosePrct = r.choosePrct; %choose the percentiles to plot
+    if choosePrct > size(prctChan,1)
+        error('You cannot plot more percentiles than the array prctChan provides!')
+    elseif choosePrct == 0;
+        choosePrct = 1:size(prctChan,1);
+    end
+catch
+    choosePrct = 1:size(prctChan,1);
 end
 try
     PLOT = r.PLOT;
@@ -85,7 +100,7 @@ x = 1:Nchan;
 
 figure
 hold on
-for ii = 1:Nprct
+for ii = choosePrct
     plot(x,prctChan(ii,:),'Marker',PLOT.marker{ii},'MarkerSize',PLOT.ms,...
         'Color',PLOT.colors(ii,:),'LineStyle','none')
     plotone = gca;
@@ -98,7 +113,9 @@ if bvertmarkers
 end
 
 %labels
-legend(legendtag,'Location','SouthEast')
+if blegend
+    legend(legendtag,'Location','SouthEast')
+end
 xlabel(labels{1},'FontSize',PLOT.fsztxt)
 ylabel(labels{2},'FontSize',PLOT.fsztxt)
 title(labels{3},'FontSize',PLOT.fsztxt)

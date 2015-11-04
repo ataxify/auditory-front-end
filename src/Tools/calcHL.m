@@ -89,8 +89,8 @@ out_r = NaN(nSamples,nChannels);
 winRep = repmat(win,1,nChannels);
 
 % Estimate SPL
-xref = 20e-5; %ref for dB SPL definition: xrms = 1 -> Lp = 74dB SPL
-%(xrms = xref = 20e-5 -> Lp = 0dB SPL)
+xref = 20e-6; %ref for dB SPL definition: xrms = 1 -> Lp = 94dB SPL
+%(xrms = xref = 20e-6 -> Lp = 0dB SPL)
 % xref = 1e-5; %ref for digital value definition: xrms = 1 -> Lp = 100dB
 %              %using this reference will reproduce totEnergy = Lp
 %              (Lp being the specified level of the input signal)

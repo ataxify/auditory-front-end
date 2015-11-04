@@ -34,7 +34,7 @@
 function plotbinCueHistc(Nhist,gravityFunction,varargin)
 
 %% Definitions (fixed Parameters)
-gravplwidth = 0.1; %width of plot for gravity
+gravplheight = 0.1; %width of plot for gravity
 shift = 0.3; %shift in width for imagesc and pos(1) for gravity plot
 xtick = 5; %every 'xtick' tick on xaxis
 % fsax = 14; %FontSize Axis -> substituted by S.fsax
@@ -128,7 +128,7 @@ y = linspace(-ymax,ymax,nbins);
 
 figure
 if bgravity
-    subplot(1,2,1)
+    subplot(2,1,1)
 end
 switch method
     case 'SURF'
@@ -155,7 +155,9 @@ end
 
 %labels
 xlabel(labels{1},'FontSize',PLOT.fsztxt)
-ylabel(labels{2},'FontSize',PLOT.fsztxt)
+if ~bgravity
+    ylabel(labels{2},'FontSize',PLOT.fsztxt)
+end
 
 %axes
 xlim([1 Nchan])
@@ -172,14 +174,14 @@ end
 
 % Managing frequency axis ticks for auditory filterbank
 if exist('xticklabel','var')
-    cfHz = xticklabel;
+    cfHz = xticklabel/1e3;
     % Find position of y-axis ticks
     M = size(cfHz,2);  % Number of channels
     n_points = 500;    % Number of points in the interpolation
     interpolate_ticks = spline(1:M,cfHz,linspace(0.5,M+0.5,n_points));
 
     % Restrain ticks to signal range (+/- a half channel)
-    aud_ticks = [100 250 500 1000 2000 4000 8000 16000 32000];
+    aud_ticks = [0.1 0.25 0.5 1 2 4 8 16 32];
     aud_ticks = aud_ticks(aud_ticks<=interpolate_ticks(end));
     aud_ticks = aud_ticks(aud_ticks>=interpolate_ticks(1));
     n_ticks = size(aud_ticks,2);        % Number of ticks
@@ -200,27 +202,38 @@ else
     xticklabel = x;
     set(plotone,'XTick',xtick:xtick:length(xticklabel))
     set(plotone,'XTickLabel',xticklabel(xtick:xtick:end))
-    set(gca,'FontSize',PLOT.fszax)
+    set(plotone,'FontSize',PLOT.fszax)
 end
 
-%gravity
+% rotate graph by 90°
+view(90,90)
+set(gca,'xdir','reverse','ydir','normal')
+
+% gravity
 if bgravity
-    subplot(1,2,2)
+    subplot(2,1,2)
     plot(y,gravityFunction,'LineWidth',PLOT.lw,'Color','k')
-    view(90,90)
-%     title('Centre of gravity','FontSize',S.fstxt)
     plottwo = gca;
     pos1 = get(plotone,'Position');
     pos2 = get(plottwo,'Position');
     hpytick = get(plotone,'YTick');
-    set(plotone,'Position',[pos1(1) pos1(2) pos1(3)+shift pos1(4)])
-    set(plottwo,'Position',[pos2(1)+shift-0.08 pos2(2) gravplwidth pos2(4)])
-    set(gca,'XTick',hpytick)
-    set(gca,'XTickLabel',[])
-    set(gca,'YTickLabel',{'0';'';num2str(gravlim)})
+    set(plotone,'Position',[pos1(1) pos1(2)-shift pos1(3) pos1(4)+shift])
+    set(plotone,'YTickLabel',[])
+    set(plottwo,'Position',[pos2(1) pos2(2) pos2(3) gravplheight])
+    set(plottwo,'XTick',hpytick)
+    set(plottwo,'YTickLabel',{'0';'';num2str(gravlim)})
+    xlabel(labels{2},'FontSize',PLOT.fsztxt)
+    ylabel('gravity','FontSize',PLOT.fsztxt)
     xlim([-ymax ymax])
     ylim([0 gravlim])
     set(gca,'FontSize',PLOT.fszax)
+end
+
+if PLOT.save
+    filename = PLOT.filename;
+    %             print(gcf,'-dpng',filename)
+    print(gcf,'-depsc',filename)
+    disp(['Plot saved as ' filename])
 end
         
 end

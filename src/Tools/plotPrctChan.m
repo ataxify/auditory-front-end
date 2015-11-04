@@ -103,8 +103,8 @@ hold on
 for ii = choosePrct
     plot(x,prctChan(ii,:),'Marker',PLOT.marker{ii},'MarkerSize',PLOT.ms,...
         'Color',PLOT.colors(ii,:),'LineStyle','none')
-    plotone = gca;
 end
+plotone = gca;
 if bvertmarkers
     hold on
     plot(repmat(x,2,1),repmat([-ymax ymax],length(x),1)','Color','k',...

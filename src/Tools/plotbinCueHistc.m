@@ -40,14 +40,6 @@ xtick = 5; %every 'xtick' tick on xaxis
 % fsax = 14; %FontSize Axis -> substituted by S.fsax
 
 %% check inputs
-if nargin<2||isempty(gravityFunction) 
-    % consider only activated bands
-    [~, Nchanact] = getActBands(Nhist);
-    
-    %generate gravity Function
-    gravityFunction = nansum(Nhist,2)/Nchanact;
-end
-
 r = struct(varargin{:});
 try 
     clim = r.clim;
@@ -96,9 +88,14 @@ catch
     %do nothing
 end
 try
-    markers = r.markers; %vertical lines to mark a certain frequncy region
+    cfSel = r.cfSel; %selecting frequency bands for averaging of cohAv
 catch
-    markers = 0;
+    cfSel = 1:size(Nhist,2);
+end
+try
+    bmarkcfSel = r.bmarkcfSel; %bool: Mark frequency limits acc. to cfSel
+catch
+    bmarkcfSel = 0;
 end
 try
     PLOT = r.PLOT;
@@ -106,7 +103,14 @@ catch
     load S %common plot settings
     PLOT = S;
 end
-% end
+
+if nargin<2||isempty(gravityFunction) 
+    % consider only activated bands
+    [~, Nchanact] = getActBands(Nhist(:,cfSel));
+    
+    %generate gravity Function
+    gravityFunction = nansum(Nhist(:,cfSel),2)/Nchanact;
+end
 
 if length(labels)<3
     if(brel)
@@ -117,6 +121,9 @@ if length(labels)<3
 end
 
 %% Plots
+
+%select frequency channels
+Nhist = Nhist(:,cfSel);
 
 %number of containers 'nbins' and frequency channels 'Nchan'
 nbins = size(Nhist,1);
@@ -143,10 +150,10 @@ switch method
         if color_flag
             colorbar
         end
-        if markers
+        if bmarkcfSel
            hold on
-           plot(markers(1),y,'Color','k','Linewidth',PLOT.lw)
-           plot(markers(2),y,'Color','k','Linewidth',PLOT.lw)
+           plot(cfSel(1),y,'Color','k','Linewidth',PLOT.lw)
+           plot(cfSel(end),y,'Color','k','Linewidth',PLOT.lw)
            hold off
         end
         title(labels{3},'FontSize',PLOT.fsztxt)
@@ -174,7 +181,7 @@ end
 
 % Managing frequency axis ticks for auditory filterbank
 if exist('xticklabel','var')
-    cfHz = xticklabel/1e3;
+    cfHz = xticklabel(:,cfSel)/1e3;
     % Find position of y-axis ticks
     M = size(cfHz,2);  % Number of channels
     n_points = 500;    % Number of points in the interpolation

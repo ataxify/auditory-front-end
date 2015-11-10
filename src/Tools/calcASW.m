@@ -139,11 +139,21 @@ switch transMethod
         itdReprChan = itdReprChan/itdmax;
         ildReprChan = ildReprChan/ildmax;
         
+    case 'freqnorm'
+        % normalize to the highest possible value from anechoic 
+        % conditions in each band
+        itdload  = load('ITD2Azimuth_Subband.mat');
+        itdmax   = max(abs(itdload.mapping.itd2azim),[],1);
+        itdReprChan = itdReprChan.*repmat(itdmax.^-1,[size(itdReprChan,1),1]);
+        ildload  = load('ILD2Azimuth_Subband.mat');
+        ildmax   = max(abs(ildload.mapping.ild2azim),[],1);
+        ildReprChan = ildReprChan.*repmat(ildmax.^-1,[size(itdReprChan,1),1]);
+        
     case 'latcomp' %lateral compression
         itdReprChan = latCompression(itdReprChan,itdmax);
         ildReprChan = latCompression(ildReprChan,ildmax);
         
-    case 'mapping' %Map boarders (percentiles/std) of ITDs and ILDs to azimuthal angle
+    case 'mapping'  %Map boarders (percentiles/std) of ITDs and ILDs to azimuthal angle
         % init
         Nbounds = size(itdReprChan(:,1),1);
         itd_mapped = zeros(Nbounds,Nchan);

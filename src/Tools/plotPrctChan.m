@@ -59,6 +59,11 @@ catch
     %do nothing
 end
 try
+    cfSel = r.cfSel; %selecting frequency bands for averaging of cohAv
+catch
+    cfSel = 1:size(prctChan,2);
+end
+try
     bvertmarkers = r.bvertmarkers; %vertical lines to mark a certain frequncy region
 catch
     bvertmarkers = 0;
@@ -90,6 +95,9 @@ if length(labels)<3
 end
 
 %% Plots
+
+%select frequency channels
+prctChan = prctChan(:,cfSel);
 
 %number of containers 'nbins' and frequency channels 'Nchan'
 Nprct = size(prctChan,1);
@@ -126,7 +134,7 @@ ylim([-ymax ymax])
 
 % Managing frequency axis ticks for auditory filterbank
 if exist('xticklabel','var')
-    cfHz = xticklabel/1e3;
+    cfHz = xticklabel(:,cfSel)/1e3;
     % Find position of y-axis ticks
     M = size(cfHz,2);  % Number of channels
     n_points = 500;    % Number of points in the interpolation

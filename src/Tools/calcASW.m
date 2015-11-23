@@ -252,8 +252,8 @@ switch combMethod
         aswReprChan = zeros(size(itdReprChan));
         
         % choose channels for either dominance
-        aswReprChan(:,bitdDominance) = itdReprChan(:,bitdDominance);
-        aswReprChan(:,~bitdDominance) = ildReprChan(:,~bitdDominance);  
+        aswReprChan(bitdDominance) = itdReprChan(bitdDominance);
+        aswReprChan(~bitdDominance) = ildReprChan(~bitdDominance);  
         
         % average all channels
         asw = nanmean(aswReprChan,2);

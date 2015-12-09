@@ -89,11 +89,6 @@ if isfield(opt,'freqWeights')
 else
     freqWeights = ones(1,size(dObj.itd,2)); %use ones, so no weighting!
 end
-if isfield(opt,'timeFreqWeights')
-    timeFreqWeights = opt.timeFreqWeights;
-else
-    timeFreqWeights = ones(1,size(dObj.itd,2)); %use ones, so no weighting!
-end
 
 %% Definitions
 
@@ -196,7 +191,7 @@ switch freqWeighting
                         %respectively
         ildBandSelect = 1:Nchan;
         
-    case 'freqspl'
+    case 'spl'
         itdBandSelect = 1:Nchan;
         ildBandSelect = 1:Nchan;
         itdReprChan = itdReprChan.*repmat(freqWeights,size(itdReprChan,1),1);

@@ -94,12 +94,12 @@ y = linspace(-ymax,ymax,nbins);
 
 %absolute maxium of the distribution
 binCueMax = max(max(abs(binCue)));
-disp('- binCueHistc.m -')
-disp(['Maximum value of distribution: ' num2str(binCueMax)])
-disp(['Specified allowed maximum value for histogram: ' num2str(ymax)])
-if ymax < binCueMax
-    disp(['Histogram is truncated to ''ymax'' = ' num2str(ymax)])
-end
+% disp('- binCueHistc.m -')
+% disp(['Maximum value of distribution: ' num2str(binCueMax)])
+% disp(['Specified allowed maximum value for histogram: ' num2str(ymax)])
+% if ymax < binCueMax
+%     disp(['Histogram is truncated to ''ymax'' = ' num2str(ymax)])
+% end
     
 %init 
 Nhist = NaN(nbins,Nchan);

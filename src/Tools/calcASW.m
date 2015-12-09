@@ -258,6 +258,25 @@ switch combMethod
         % average all channels
         asw = nanmean(aswReprChan,2);
         
+    case 'perimeter' % choose the outer bands, as done by Ahrens
+        if strcmp(transMethod,'none')
+            warning('Bin. cues need to be transformed before they can be combined!')
+        end
+        
+        periITD = find(cfHz<200);
+        periILD = find((cfHz>2e3));
+        
+        % init
+        %aswReprChan = zeros(size(itdReprChan));
+        aswReprChan = zeros(size(itdReprChan,1),size([periITD,periILD],2));
+        
+        % choose channels for either dominance
+        aswReprChan(:,periITD)           = itdReprChan(:,periITD); %1:4
+        aswReprChan(:,end-periILD+1:end) = ildReprChan(:,periILD); %5:24
+        
+        % average all channels
+        asw = nanmean(aswReprChan,2);
+        
     otherwise
         error(['The combination method ' combMethod ' is not defined!'])
 

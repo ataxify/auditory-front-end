@@ -33,7 +33,8 @@
 % - 23. October 2015
 % --------------------------
 
-function [out_l, out_r, totEn ,actbands, weights] = calcHL(in_l,in_r,method,cfHz,FsHzIn,enTh,hl_wname,hl_wSizeSec,hl_hSizeSec)
+function [out_l, out_r, totEn ,actbands, freqWeights, binMask] = ...,
+         calcHL(in_l,in_r,method,cfHz,FsHzIn,bframebased,enTh,hl_wname,hl_wSizeSec,hl_hSizeSec)
 
 %% Check Inputs
 if nargin<2
@@ -48,21 +49,22 @@ end
 if nargin<5 || isempty(FsHzIn)
     FsHzIn = 44.1e3; %Sampling Frequency [Hz]
 end
-if nargin<6 || isempty(enTh)
+if nargin<6|| isempty(bframebased)
+    bframebased = 1; %bool: frame-based estimation(1)
+end
+if nargin<7 || isempty(enTh)
     enTh = 0.5; %Threshold for energy-estimation
 end
-if nargin<7 || isempty(hl_wname)
+if nargin<8 || isempty(hl_wname)
     hl_wname = 'hann'; %Window name
 end
-if nargin<8|| isempty(hl_wSizeSec)
+if nargin<9|| isempty(hl_wSizeSec)
     hl_wSizeSec = 20E-3; %Window duration (s)
 end
-if nargin<9|| isempty(hl_hSizeSec)
+if nargin<10|| isempty(hl_hSizeSec)
     hl_hSizeSec = 10E-3; %Window step size (s)
 end
 
-% frame-based estimation?
-bframebased = 1;
 
 % get dimensions of input
 [nSamples,nChannels] = size(in_l);
@@ -78,8 +80,8 @@ nFrames = floor((nSamples-(wSize-hSize))/hSize);
 % Compute HL:
 
 % init SPL calculations
-frame_l_SPL = zeros(1,nChannels);
-frame_r_SPL = zeros(1,nChannels);
+frame_l_rms = zeros(nFrames,nChannels);
+frame_r_rms = zeros(nFrames,nChannels);
 
 % Pre-allocate outputs
 out_l = NaN(nSamples,nChannels);
@@ -96,22 +98,20 @@ xref = 20e-6; %ref for dB SPL definition: xrms = 1 -> Lp = 94dB SPL
 %              (Lp being the specified level of the input signal)
 
 if bframebased
-    % Loop on the time frame
+    % Loop over time frames
     for ii = 1:nFrames
         % Get start and end indexes for the current frame
         n_start = (ii-1)*hSize+1;
         n_end = (ii-1)*hSize+wSize;
         
         % Energy in the windowed frame for left and right input
-        frame_l_rms = sqrt(mean(power(winRep.*in_l(n_start:n_end,:),2)));
-        frame_r_rms = sqrt(mean(power(winRep.*in_r(n_start:n_end,:),2)));
-        
-        %update SPL and devide by number of frames for averaging
-        %between two successive frames
-        frame_l_SPL = 20*log10(0.5*(frame_l_rms/xref + 10.^(frame_l_SPL/20))); %acc. SPL left channel
-        frame_r_SPL = 20*log10(0.5*(frame_r_rms/xref + 10.^(frame_r_SPL/20))); %acc. SPL right channel
-        
+        frame_l_rms(ii,:) = sqrt(mean(power(winRep.*in_l(n_start:n_end,:),2)));
+        frame_r_rms(ii,:) = sqrt(mean(power(winRep.*in_r(n_start:n_end,:),2)));
     end
+    
+    % calc SPL and devide by number of frames for averaging
+    frame_l_SPL = 20*log10(1/nFrames*sum(frame_l_rms/xref,1)); %acc. SPL left channel
+    frame_r_SPL = 20*log10(1/nFrames*sum(frame_r_rms/xref,1)); %acc. SPL right channel
     
 else
     % Energy in the windowed frame for left and right input
@@ -130,15 +130,21 @@ max_lr_SPL = max(frame_l_SPL,frame_r_SPL);
 totEn = 20*log10(sum(10.^(max_lr_SPL/20))); %tot. level from all filters
 
 % Weights normalized to frequency band with highest SPL
-weights = max_lr_SPL/max(max_lr_SPL);
+freqWeights = max_lr_SPL/max(max_lr_SPL);
+freqWeights(freqWeights<0) = 0; %set negative weights (due to subthreshold) to zero
 
 % calculate active frequency bands
 switch method
     case 'none'
+        %actbands: all channels active
         actbands = (1:length(cfHz)); %column-vector with #filters
         
+        %binary mask: all time-frequency-units active
+        binMask = ones(nFrames,nChannels);
+        
     case 'ath'
-        ath = calcATH(cfHz*1e-3); %absolute threshold of hearing
+        %absolute threshold of hearing
+        ath = calcATH(cfHz*1e-3); 
 
         %all filters that are above absolute threshold of hearing
         bpassth = max_lr_SPL>ath; %bool
@@ -146,6 +152,30 @@ switch method
         %active bands
         actbands = (1:length(cfHz)); %column-vector with #filters
         actbands = actbands(bpassth); %select activated channels from the vector
+        
+        %binary mask: all time-frequency-units active
+        binMask = ones(nFrames,nChannels);
+        
+    case 'binmask'
+        %actbands: all channels active
+        actbands = (1:length(cfHz)); %column-vector with #filters
+        
+        %absolute threshold of hearing
+        ath = calcATH(cfHz*1e-3); 
+        
+        % maximal time-frequency-units between left and right channel
+        frame_SPL = max(20*log10(frame_l_rms/xref),20*log10(frame_r_rms/xref));
+        
+        %all filters that are above absolute threshold of hearing
+        binMask = frame_SPL>repmat(ath,nFrames,1); %time-frequency binary mask 
+        
+%         %binary mask: "substitutes" actbands
+%         binMask = ones(size(frame_SPL)); %column-vector with #filters
+%         binMask = binMask(bpassth); %select activated channels from the vector
+        
+        % dynamic time-frequency weights
+        % timeFreqWeights = frame_SPL/max(max(frame_SPL));
+        % timeFreqWeights(timeFreqWeights<0) = 0; %set negative weights (due to subthreshold) to zero
         
     case 'en'
         warning('Energy-based method not implemented yet!')

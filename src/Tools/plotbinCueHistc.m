@@ -73,9 +73,14 @@ catch
     bgravity = 1; %relative occurance (normalise data)
 end
 try
-    ymax = r.ymax;
+    ymaxbin = r.ymaxbin;
 catch
-    ymax = max(max(abs(Nhist))); %ylim according to data
+    ymaxbin = max(max(abs(Nhist))); %maximum bin value according to data
+end
+try
+    ymaxplot = r.ymaxplot;
+catch
+    ymaxplot = max(max(abs(Nhist))); %ylim according to data
 end
 try
     labels = r.labels;
@@ -131,7 +136,7 @@ Nchan = size(Nhist,2);
 
 %x and y coordinate
 x = 1:Nchan;
-y = linspace(-ymax,ymax,nbins);
+y = linspace(-ymaxbin,ymaxbin,nbins);
 
 figure
 if bgravity
@@ -168,7 +173,7 @@ end
 
 %axes
 xlim([1 Nchan])
-ylim([-ymax ymax])
+ylim([-ymaxplot ymaxplot])
 if brel
     zlim(clim)
 end
@@ -231,7 +236,7 @@ if bgravity
     set(plottwo,'YTickLabel',{'0';'';num2str(gravlim)})
     xlabel(labels{2},'FontSize',PLOT.fsztxt)
     ylabel('gravity','FontSize',PLOT.fsztxt)
-    xlim([-ymax ymax])
+    xlim([-ymaxplot ymaxplot])
     ylim([0 gravlim])
     set(gca,'FontSize',PLOT.fszax)
 end

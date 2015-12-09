@@ -84,10 +84,10 @@ if isfield(opt,'combMethod')
 else
     combMethod = 'itd';
 end
-if isfield(opt,'weights')
-    weights = opt.weights;
+if isfield(opt,'freqWeights')
+    freqWeights = opt.freqWeights;
 else
-    weights = ones(1,size(dObj.itd,2)); %use ones, so no weighting!
+    freqWeights = ones(1,size(dObj.itd,2)); %use ones, so no weighting!
 end
 
 %% Definitions
@@ -204,8 +204,10 @@ switch freqWeighting
     case 'spl'
         itdBandSelect = 1:Nchan;
         ildBandSelect = 1:Nchan;
-        itdReprChan = itdReprChan.*repmat(weights,size(itdReprChan,1),1);
-        ildReprChan = ildReprChan.*repmat(weights,size(ildReprChan,1),1);
+        itdReprChan = itdReprChan.*repmat(freqWeights,size(itdReprChan,1),1);
+        ildReprChan = ildReprChan.*repmat(freqWeights,size(ildReprChan,1),1);
+        
+%     case 'timefreqspl'
         
     otherwise
         error(['The frequency weighting ' freqWeighting ' is not defined!'])
